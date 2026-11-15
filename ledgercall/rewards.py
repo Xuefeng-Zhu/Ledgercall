@@ -292,13 +292,17 @@ def tool_choice(
         scores: list[float] = []
         for i, comp in enumerate(comp_list):
             try:
-                exp = _item_at(expected_tools, i, default=[])
+                exp = _item_at(expected_tools, i, default=None)
+                if exp is None:
+                    scores.append(0.0)
+                    continue
                 if isinstance(exp, str):
                     exp_list = [exp]
                 elif isinstance(exp, (list, tuple)):
                     exp_list = [str(x) for x in exp]
                 else:
-                    exp_list = []
+                    scores.append(0.0)
+                    continue
                 called = extract_called_tools(
                     comp,
                     trajectory=_item_at(trajectories, i),
@@ -332,13 +336,17 @@ def efficiency(
         scores: list[float] = []
         for i, comp in enumerate(comp_list):
             try:
-                exp = _item_at(expected_tools, i, default=[])
+                exp = _item_at(expected_tools, i, default=None)
+                if exp is None:
+                    scores.append(0.0)
+                    continue
                 if isinstance(exp, str):
                     exp_count = 1
                 elif isinstance(exp, (list, tuple)):
                     exp_count = len(exp)
                 else:
-                    exp_count = 0
+                    scores.append(0.0)
+                    continue
 
                 called = extract_called_tools(
                     comp,
