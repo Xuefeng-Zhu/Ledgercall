@@ -52,7 +52,8 @@ def _select_torch_dtype() -> Any:
     import torch
 
     if torch.cuda.is_available():
-        if torch.cuda.is_bf16_supported():
+        major, _ = torch.cuda.get_device_capability()
+        if major >= 8 and torch.cuda.is_bf16_supported():
             return torch.bfloat16
         return torch.float16
     return torch.float32
@@ -126,6 +127,16 @@ def load_model_and_tokenizer(
 
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
+    # Stop on Tiny Aya's real end-of-turn markers. Its generation_config only lists
+    # <EOS_TOKEN>, so without this every turn runs to max_new_tokens.
+    stop_ids = []
+    for tok in ("<|END_RESPONSE|>", "<|END_OF_TURN_TOKEN|>", "<EOS_TOKEN>"):
+        tid = tokenizer.convert_tokens_to_ids(tok)
+        if isinstance(tid, int) and tid >= 0 and tid != tokenizer.unk_token_id:
+            stop_ids.append(tid)
+    if stop_ids and getattr(model, "generation_config", None) is not None:
+        model.generation_config.eos_token_id = stop_ids
+        info["stop_token_ids"] = stop_ids
     return model, tokenizer, info
 
 

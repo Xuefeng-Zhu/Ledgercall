@@ -60,8 +60,15 @@ def check_leakage(train_rows: list[dict[str, Any]], test_rows: list[dict[str, An
     return sum(1 for r in test_rows if _prompt_key(r) in train_keys)
 
 
-def _make_row(user_text: str, answer_val: float, expected_tools: list[str], task_type: str) -> dict[str, Any]:
+def _make_row(
+    user_text: str,
+    answer_val: float,
+    expected_tools: list[str],
+    task_type: str,
+    gold_calls: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     return {
+        "gold_calls": gold_calls or [],
         "prompt": [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_text},
@@ -90,7 +97,8 @@ def _gen_single_convert_currency(rng: random.Random) -> dict[str, Any]:
         "return your final answer wrapped like *123.45*.",
     )
     ans = convert_currency(amount, src, dst)
-    return _make_row(rng.choice(templates), ans, ["convert_currency"], "single_convert_currency")
+    return _make_row(rng.choice(templates), ans, ["convert_currency"], "single_convert_currency",
+                     [{"name": "convert_currency", "arguments": {"amount": amount, "from_ccy": src, "to_ccy": dst}}])
 
 
 def _gen_single_compound_interest(rng: random.Random) -> dict[str, Any]:
@@ -108,7 +116,8 @@ def _gen_single_compound_interest(rng: random.Random) -> dict[str, Any]:
         "Return the final number wrapped like *123.45*.",
     )
     ans = compound_interest(principal, rate, years, n)
-    return _make_row(rng.choice(templates), ans, ["compound_interest"], "single_compound_interest")
+    return _make_row(rng.choice(templates), ans, ["compound_interest"], "single_compound_interest",
+                     [{"name": "compound_interest", "arguments": {"principal": principal, "annual_rate_pct": rate, "years": years, "compounds_per_year": n}}])
 
 
 def _gen_single_percent_change(rng: random.Random) -> dict[str, Any]:
@@ -124,7 +133,8 @@ def _gen_single_percent_change(rng: random.Random) -> dict[str, Any]:
         "percentage change from old to new? Wrap the final answer like *123.45*.",
     )
     ans = percent_change(old, new)
-    return _make_row(rng.choice(templates), ans, ["percent_change"], "single_percent_change")
+    return _make_row(rng.choice(templates), ans, ["percent_change"], "single_percent_change",
+                     [{"name": "percent_change", "arguments": {"old": old, "new": new}}])
 
 
 def _gen_single_loan_payment(rng: random.Random) -> dict[str, Any]:
@@ -140,7 +150,8 @@ def _gen_single_loan_payment(rng: random.Random) -> dict[str, Any]:
         "Return the final number wrapped like *123.45*.",
     )
     ans = loan_payment(principal, rate, months)
-    return _make_row(rng.choice(templates), ans, ["loan_payment"], "single_loan_payment")
+    return _make_row(rng.choice(templates), ans, ["loan_payment"], "single_loan_payment",
+                     [{"name": "loan_payment", "arguments": {"principal": principal, "annual_rate_pct": rate, "months": months}}])
 
 
 def _gen_two_step_ci_fx(rng: random.Random) -> dict[str, Any]:
@@ -163,6 +174,10 @@ def _gen_two_step_ci_fx(rng: random.Random) -> dict[str, Any]:
         ans,
         ["compound_interest", "convert_currency"],
         "two_step_ci_fx",
+        [
+            {"name": "compound_interest", "arguments": {"principal": principal, "annual_rate_pct": rate, "years": years, "compounds_per_year": n}},
+            {"name": "convert_currency", "arguments": {"amount": maturity, "from_ccy": src, "to_ccy": dst}},
+        ],
     )
 
 
@@ -184,6 +199,10 @@ def _gen_two_step_loan_fx(rng: random.Random) -> dict[str, Any]:
         ans,
         ["loan_payment", "convert_currency"],
         "two_step_loan_fx",
+        [
+            {"name": "loan_payment", "arguments": {"principal": principal, "annual_rate_pct": rate, "months": months}},
+            {"name": "convert_currency", "arguments": {"amount": monthly, "from_ccy": src, "to_ccy": dst}},
+        ],
     )
 
 
@@ -207,6 +226,10 @@ def _gen_two_step_fx_pct(rng: random.Random) -> dict[str, Any]:
         ans,
         ["convert_currency", "percent_change"],
         "two_step_fx_pct",
+        [
+            {"name": "convert_currency", "arguments": {"amount": amount, "from_ccy": src, "to_ccy": dst}},
+            {"name": "percent_change", "arguments": {"old": baseline, "new": converted}},
+        ],
     )
 
 
@@ -233,6 +256,10 @@ def _gen_two_step_ci_pct(rng: random.Random) -> dict[str, Any]:
         ans,
         ["compound_interest", "percent_change"],
         "two_step_ci_pct",
+        [
+            {"name": "compound_interest", "arguments": {"principal": principal, "annual_rate_pct": rate, "years": years, "compounds_per_year": n}},
+            {"name": "percent_change", "arguments": {"old": benchmark, "new": maturity}},
+        ],
     )
 
 
