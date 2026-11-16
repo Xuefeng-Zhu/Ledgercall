@@ -172,7 +172,7 @@ new chain shapes (FX -> compound -> FX back). Exact-prompt leakage vs train/aug/
 | Tool call accuracy | 71.3% | 61.1% | 96.5% |
 | Exact tool sequence | 56.9% | 48.6% | 93.1% |
 | Malformed call rate | 58.3% | 9.7% | 0.0% |
-| Avg tool calls | 1.40 | 0.90 | 1.50 (gold 1.58) |
+| Avg tool calls | 1.40 | 0.90 | 1.50 (gold 1.50) |
 | Avg completion tokens | 213 | 70 | 98 |
 | Avg latency (s) | 18.6 | 13.6 | 18.1 |
 
