@@ -168,6 +168,8 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
     rng = random.Random(0)
     order = list(range(len(examples)))
     total_steps = math.ceil(len(examples) * args.epochs / args.grad_accum)
+    if args.max_steps:
+        total_steps = min(total_steps, args.max_steps)
     device = next(model.parameters()).device
     step, micro, t0, losses = 0, 0, time.time(), []
     log = []
@@ -223,6 +225,7 @@ def main(argv: list[str] | None = None):
     ap.add_argument("--lr", type=float, default=2e-4)
     ap.add_argument("--lora_r", type=int, default=16)
     ap.add_argument("--max_minutes", type=float, default=60.0)
+    ap.add_argument("--max_steps", type=int, default=0, help="cap optimizer steps so the cosine schedule completes")
     ap.add_argument("--capture_only", action="store_true")
     return train(ap.parse_args(argv))
 
