@@ -1,0 +1,35 @@
+{
+  "tag": "ood_tuned_v4",
+  "n_evaluated": 84,
+  "model_info": {
+    "base_model": "/kaggle/input/models/cohere-labs/tiny-aya/transformers/global/1",
+    "adapter": "out/sft",
+    "dtype": "torch.float16",
+    "stop_token_ids": [
+      261001,
+      6,
+      3
+    ]
+  },
+  "trajectories_path": "results/ood_tuned_v4_trajectories.jsonl",
+  "task_success": 0.8929,
+  "tool_call_accuracy": 1.0,
+  "exact_tool_sequence_rate": 1.0,
+  "malformed_call_rate": 0.0,
+  "avg_tool_calls": 1.6667,
+  "avg_latency_s": 18.5937,
+  "tokens_per_sec": 5.75,
+  "avg_completion_tokens": 106.93,
+  "total_completion_tokens": 8982,
+  "total_time_s": 1561.869,
+  "auditkit": {
+    "verified_success_rate": 0.8929,
+    "diagnostics": {
+      "tool_call_f1_name": 1.0,
+      "tool_call_validity": 1.0,
+      "redundant_tool_calls": 0.0,
+      "agent_loop_detection": 1.0
+    },
+    "summary": "Agent eval   Mode: recorded   Cases: 84\nVerified success: 75/84 (75/84 decided)   Failure: 9   Unknown outcome: 0   Error: 0   Over budget: 0\nEndpoint errors: 0\nStatus: completed 84\nTrace coverage: full 84, tool names only 0, answer only 0\nTool validity: 84/84 eligible\nMedian latency: n/a          Agent calls: 0"
+  }
+}
