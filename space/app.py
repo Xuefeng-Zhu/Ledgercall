@@ -26,6 +26,13 @@ N = min(len(TEST), max(len(BASE), len(TUNED)) or len(TEST))
 STAR = re.compile(r"\*\s*(-?[\d,]*\.?\d+)\s*\*")
 
 
+TAGS = re.compile(r"<\|[A-Z_]+\|>|<EOS_TOKEN>")
+
+
+def clean(x) -> str:
+    return TAGS.sub("", str(x)).strip()
+
+
 def final_answer(traj: dict) -> str:
     steps = traj.get("steps") or []
     return str(steps[-1].get("observation") or "") if steps else ""
@@ -54,7 +61,7 @@ def render(traj: dict | None, answer: str) -> str:
                 out.append(f"**Tool call** `{c.get('name')}`\n```json\n{json.dumps(c.get('arguments'), indent=1)[:800]}\n```")
             out.append(f"**Tool result:** `{str(s.get('observation'))[:400]}`")
         else:
-            out.append(f"**Final answer:**\n\n{str(s.get('observation'))[:1200]}")
+            out.append(f"**Final answer:**\n\n{clean(s.get('observation'))[:1200]}")
     ok = is_success(traj, answer)
     out.append(f"\n---\n**Tool calls:** {sum(len((s.get('action') or {}).get('tool_calls') or []) for s in steps)}  ·  "
                f"**Correct:** {'✅' if ok else '❌'} (expected {answer})")
