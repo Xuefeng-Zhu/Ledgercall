@@ -1,0 +1,35 @@
+{
+  "tag": "ood_tuned",
+  "n_evaluated": 84,
+  "model_info": {
+    "base_model": "/kaggle/input/models/cohere-labs/tiny-aya/transformers/global/1",
+    "adapter": "/kaggle/input/notebooks/xuefengzhu19/ledgercall-grpo/artifacts/adapter",
+    "dtype": "torch.float16",
+    "stop_token_ids": [
+      261001,
+      6,
+      3
+    ]
+  },
+  "trajectories_path": "results/ood_tuned_trajectories.jsonl",
+  "task_success": 0.3929,
+  "tool_call_accuracy": 0.6151,
+  "exact_tool_sequence_rate": 0.5,
+  "malformed_call_rate": 0.2738,
+  "avg_tool_calls": 1,
+  "avg_latency_s": 14.5178,
+  "tokens_per_sec": 5.56,
+  "avg_completion_tokens": 80.77,
+  "total_completion_tokens": 6785,
+  "total_time_s": 1219.496,
+  "auditkit": {
+    "verified_success_rate": 0.3929,
+    "diagnostics": {
+      "tool_call_f1_name": 0.6698,
+      "tool_call_validity": 1.0,
+      "redundant_tool_calls": 0.0,
+      "agent_loop_detection": 1.0
+    },
+    "summary": "Agent eval   Mode: recorded   Cases: 84\nVerified success: 33/84 (33/84 decided)   Failure: 51   Unknown outcome: 0   Error: 0   Over budget: 0\nEndpoint errors: 0\nStatus: completed 84\nTrace coverage: full 61, tool names only 23, answer only 0\nTool validity: 61/61 eligible\nMedian latency: n/a          Agent calls: 0"
+  }
+}
