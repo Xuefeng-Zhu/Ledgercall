@@ -4,7 +4,7 @@
 Cohere `tiny-aya-global` + LoRA, trained with AgentTune-rendered trajectory SFT and audited with AuditKIT on held-out multi-step finance tasks.
 
 - **Track 3: Agentic Fine-tuning** — problem statements **Reliable tool calling** and **Efficient trajectories**
-- Model: [frankzhu94/ledgercall-tiny-aya-sft](https://huggingface.co/frankzhu94/ledgercall-tiny-aya-sft) · Dataset: [frankzhu94/ledgercall-finance-toolbench](https://huggingface.co/datasets/frankzhu94/ledgercall-finance-toolbench) · Demo: [Space](https://huggingface.co/spaces/frankzhu94/ledgercall-demo) · Collection: _(collection link added at publish)_ · Code: _(GitHub link added at publish)_
+- Model: [frankzhu94/ledgercall-tiny-aya-sft](https://huggingface.co/frankzhu94/ledgercall-tiny-aya-sft) · Dataset: [frankzhu94/ledgercall-finance-toolbench](https://huggingface.co/datasets/frankzhu94/ledgercall-finance-toolbench) · Demo: [Space](https://huggingface.co/spaces/frankzhu94/ledgercall-demo) · Collection: _(collection link added at publish)_ · Code: [github.com/Xuefeng-Zhu/Ledgercall](https://github.com/Xuefeng-Zhu/Ledgercall)
 
 ## Headline result (100 held-out test tasks, same prompts, greedy decoding, T4)
 
@@ -26,6 +26,16 @@ Cohere `tiny-aya-global` + LoRA, trained with AgentTune-rendered trajectory SFT 
 | Deployment Option | Throughput (tok/s) | Avg Latency / Task | Est. Cost / 1k Tasks | Data Governance |
 
 AuditKIT `agent_eval` (recorded mode over AgentTune `trajectories.jsonl`) verified **0/100 → 100/100** episodes as successful.
+
+## Generalization headline (tasks never seen in training)
+
+| Eval set | Base | v3 SFT | v4 SFT + targeted aug |
+| :--- | ---: | ---: | ---: |
+| Blind OOD #2, 72 tasks (fr/de/ja/zh/es/en, symbols, new chains) | 0.0% | 41.7% | **84.7%** |
+| OOD #1, 84 tasks (paraphrase, zh/es, 3-step) | 1.2% | 39.3% | **89.3%*** |
+| Malformed call rate, blind OOD #2 | 58.3% | 9.7% | **0.0%** |
+
+*OOD #1 guided the v4 augmentation, so it is not blind for v4; OOD #2 was written after v4 trained and run once. In-distribution success stays 100% for v4. Details: `results/ood_comparison_v4.md`, `results/ood2_comparison.md`.
 
 ## Abstract
 
