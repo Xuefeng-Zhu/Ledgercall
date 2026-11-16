@@ -4,7 +4,7 @@
 Cohere `tiny-aya-global` + LoRA, trained with AgentTune-rendered trajectory SFT and audited with AuditKIT on held-out multi-step finance tasks.
 
 - **Track 3: Agentic Fine-tuning** — problem statements **Reliable tool calling** and **Efficient trajectories**
-- Model: [frankzhu94/ledgercall-tiny-aya-sft](https://huggingface.co/frankzhu94/ledgercall-tiny-aya-sft) · Dataset: [frankzhu94/ledgercall-finance-toolbench](https://huggingface.co/datasets/frankzhu94/ledgercall-finance-toolbench) · Demo: [Space](https://huggingface.co/spaces/frankzhu94/ledgercall-demo) · Collection: _(collection link added at publish)_ · Code: [github.com/Xuefeng-Zhu/Ledgercall](https://github.com/Xuefeng-Zhu/Ledgercall)
+- Model (v4 adapter): [frankzhu94/ledgercall-tiny-aya-sft](https://huggingface.co/frankzhu94/ledgercall-tiny-aya-sft) · Dataset: [frankzhu94/ledgercall-finance-toolbench](https://huggingface.co/datasets/frankzhu94/ledgercall-finance-toolbench) · Demo: [Space](https://huggingface.co/spaces/frankzhu94/ledgercall-demo) · Collection: [LedgerCall](https://huggingface.co/collections/frankzhu94/ledgercall-lexsi-hackathon-track-3-6afac2cda7a31348026aee1f) · Code: [github.com/Xuefeng-Zhu/Ledgercall](https://github.com/Xuefeng-Zhu/Ledgercall)
 
 ## Headline result (100 held-out test tasks, same prompts, greedy decoding, T4)
 

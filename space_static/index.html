@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LedgerCall demo</title>
+<style>
+:root{--bg:#0f1115;--card:#171a21;--line:#2a2f3a;--txt:#e6e8ee;--mut:#9aa3b2;--ok:#3ecf8e;--bad:#ff6b6b;--acc:#7c8cff}
+*{box-sizing:border-box}body{margin:0;font:15px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt)}
+main{max-width:1100px;margin:0 auto;padding:28px 18px 60px}h1{margin:0 0 4px;font-size:28px}p.sub{color:var(--mut);margin:0 0 18px}
+a{color:var(--acc)}table{border-collapse:collapse;width:100%;margin:8px 0 20px}td,th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:right}td:first-child,th:first-child{text-align:left}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin:14px 0}
+.row{display:flex;gap:14px;flex-wrap:wrap}.col{flex:1 1 420px;min-width:0}
+select,input,button,textarea{background:#0c0e12;color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:7px 9px;font:inherit}
+button{cursor:pointer;background:var(--acc);border:none;color:#fff}
+.q{white-space:pre-wrap;background:#0c0e12;border-radius:8px;padding:10px;margin:8px 0}
+.call{font-family:ui-monospace,Menlo,monospace;font-size:13px;background:#0c0e12;border-radius:8px;padding:8px;margin:6px 0;white-space:pre-wrap;word-break:break-word}
+.badge{display:inline-block;padding:1px 8px;border-radius:99px;font-size:12px;font-weight:600}.ok{background:#173d2c;color:var(--ok)}.bad{background:#3d1a1a;color:var(--bad)}
+.mut{color:var(--mut);font-size:13px}h3{margin:4px 0 8px}
+</style></head><body><main>
+<h1>LedgerCall</h1>
+<p class="sub">Tiny Aya Global (3.35B, open weights) before and after LedgerCall trajectory SFT on four deterministic finance tools. Recorded trajectories, greedy decoding on a Kaggle T4.
+<a href="https://huggingface.co/frankzhu94/ledgercall-tiny-aya-sft">Model</a> · <a href="https://huggingface.co/datasets/frankzhu94/ledgercall-finance-toolbench">Dataset</a> · <a href="https://github.com/Xuefeng-Zhu/Ledgercall">Code &amp; write-up</a></p>
+
+<div class="card"><h3>Task success</h3>
+<table><tr><th>Eval set</th><th>Base</th><th>v3 SFT</th><th>v4 SFT + aug</th></tr>
+<tr><td>In-distribution held-out (100)</td><td>0%</td><td>100%</td><td>100%</td></tr>
+<tr><td>Blind OOD: fr/de/ja/zh/es/en, symbols, new chains (72)</td><td>0%</td><td>41.7%</td><td><b>84.7%</b></td></tr>
+<tr><td>OOD #1: paraphrase, zh/es, 3-step (84)*</td><td>1.2%</td><td>39.3%</td><td><b>89.3%</b></td></tr>
+<tr><td>Malformed call rate, blind OOD</td><td>58.3%</td><td>9.7%</td><td><b>0%</b></td></tr></table>
+<div class="mut">*OOD #1 guided v4's data augmentation, so it is not blind for v4. The blind set was written after v4 trained and run once.</div></div>
+
+<div class="card">
+<div class="row" style="align-items:center">
+<label>Set <select id="set"><option value="blind">Blind OOD (72)</option><option value="ood1">OOD #1 (84)</option><option value="test">In-distribution test (100)</option></select></label>
+<label>Task <select id="idx"></select></label>
+<label><input type="checkbox" id="fails"> only v4 failures</label>
+</div>
+<div id="task"></div>
+<div class="row"><div class="col card"><h3>Base tiny-aya-global <span id="bb"></span></h3><div id="base"></div></div>
+<div class="col card"><h3>LedgerCall v4 <span id="tb"></span></h3><div id="tuned"></div></div></div>
+</div>
+
+<div class="card"><h3>Run a tool yourself</h3>
+<div class="row" style="align-items:flex-start"><select id="tool"></select><textarea id="args" rows="3" style="flex:1 1 360px"></textarea><button id="run">Run</button></div>
+<div id="out" class="call"></div><div class="mut">Same deterministic tools the model calls (fixed FX table: 1 USD = 0.92 EUR = 0.79 GBP = 152 JPY = 84 INR).</div></div>
+</main>
+<script>
+const R={USD:1,EUR:.92,GBP:.79,JPY:152,INR:84};const r2=x=>Math.round(x*100)/100;
+const TOOLS={
+convert_currency:({amount,from_ccy,to_ccy})=>{const s=String(from_ccy).toUpperCase(),d=String(to_ccy).toUpperCase();if(!(s in R)||!(d in R))throw"unsupported currency";return s==d?r2(+amount):r2(+amount/R[s]*R[d])},
+compound_interest:({principal,annual_rate_pct,years,compounds_per_year})=>{const n=parseInt(compounds_per_year);if(n<=0)throw"compounds_per_year must be positive";return r2(+principal*Math.pow(1+annual_rate_pct/100/n,n*parseInt(years)))},
+percent_change:({old,new:nw})=>{if(+old==0)throw"old must be non-zero";return r2((nw-old)/old*100)},
+loan_payment:({principal,annual_rate_pct,months})=>{const m=parseInt(months),i=annual_rate_pct/1200;if(m<=0)throw"months must be positive";if(i==0)return r2(principal/m);const f=Math.pow(1+i,m);return r2(principal*i*f/(f-1))}};
+const EX={convert_currency:{amount:1000,from_ccy:"USD",to_ccy:"EUR"},compound_interest:{principal:10000,annual_rate_pct:5,years:10,compounds_per_year:12},percent_change:{old:100,new:125},loan_payment:{principal:250000,annual_rate_pct:6.5,months:360}};
+const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+let D={};const $=id=>document.getElementById(id);
+function badge(ok){return `<span class="badge ${ok?'ok':'bad'}">${ok?'correct':'wrong'}</span>`}
+function epi(e){let h='';if(!e.calls.length)h+='<div class="mut">No valid tool call.</div>'+e.raw.filter(Boolean).map(x=>`<div class="call">${esc(x)}</div>`).join('');
+e.calls.forEach((c,i)=>h+=`<div class="call">${i+1}. ${esc(c.name)}(${esc(JSON.stringify(c.args))})\n→ ${esc(c.result)}</div>`);
+return h+`<div><b>Final:</b> ${esc(e.final||'(none)')}</div>`}
+function fill(){const s=D[$('set').value];const f=$('fails').checked;const sel=$('idx');sel.innerHTML='';
+s.forEach((t,i)=>{if(f&&t.tuned.ok)return;const o=document.createElement('option');o.value=i;o.textContent=`#${i+1} ${t.family} (${t.lang})`;sel.appendChild(o)});show()}
+function show(){const s=D[$('set').value];const t=s[+$('idx').value]; if(!t){$('task').innerHTML='<p class="mut">None.</p>';return}
+$('task').innerHTML=`<div class="q">${esc(t.q)}</div><div class="mut">Gold: ${t.gold.join(' → ')} · answer ${t.answer}</div>`;
+$('base').innerHTML=epi(t.base);$('tuned').innerHTML=epi(t.tuned);$('bb').innerHTML=badge(t.base.ok);$('tb').innerHTML=badge(t.tuned.ok)}
+fetch('data.json').then(r=>r.json()).then(j=>{D=j;fill()});
+['set','fails'].forEach(i=>$(i).onchange=fill);$('idx').onchange=show;
+Object.keys(TOOLS).forEach(k=>{const o=document.createElement('option');o.value=o.textContent=k;$('tool').appendChild(o)});
+const setEx=()=>$('args').value=JSON.stringify(EX[$('tool').value]);$('tool').onchange=setEx;setEx();
+$('run').onclick=()=>{try{$('out').textContent=JSON.stringify({[$('tool').value]:TOOLS[$('tool').value](JSON.parse($('args').value))})}catch(e){$('out').textContent='Error: '+e}};
+</script></body></html>
