@@ -1,4 +1,4 @@
-"""Compare base vs GRPO-tuned evaluation metrics and compute Cost/ROI analysis.
+"""Compare base vs SFT-tuned evaluation metrics and compute Cost/ROI analysis.
 
 Reads `results/base_metrics.json` and `results/tuned_metrics.json`, prints a
 Markdown before/after delta table plus Cost/ROI summary, and writes
@@ -24,6 +24,7 @@ _METRIC_SPECS: tuple[tuple[str, str, str, str], ...] = (
     ("malformed_call_rate", "Malformed / Failed Call Rate", "↓ lower", "pct"),
     ("avg_tool_calls", "Avg Tool Calls / Task", "↓ efficient", "num"),
     ("avg_latency_s", "Avg Latency / Task (s)", "↓ lower", "sec"),
+    ("avg_completion_tokens", "Avg Completion Tokens / Task", "↓ lower", "num"),
     ("tokens_per_sec", "Throughput (completion tok/s)", "↑ higher", "num"),
     ("auditkit.verified_success_rate", "AuditKIT Verified Success", "↑ higher", "pct"),
     ("auditkit.diagnostics.tool_call_f1_name", "AuditKIT Tool Call F1 (name)", "↑ higher", "pct"),
@@ -112,11 +113,9 @@ def build_cost_roi_section(
         "| :--- | ---: | ---: | ---: | :--- |",
         f"| **Tiny Aya Base (T4 @ ${t4_hourly_usd:.2f}/hr)** | {base_tps:.1f} | {base_lat:.2f}s | {base_cost_str} | Self-hosted / VPC |",
         f"| **LedgerCall Tuned LoRA (T4 @ ${t4_hourly_usd:.2f}/hr)** | {tuned_tps:.1f} | {tuned_lat:.2f}s | {t4_cost_str} | Self-hosted / VPC |",
-        f"| *GPT-4o-mini API (ASSUMPTION placeholder)* | n/a (hosted) | n/a | *${api_total_cost_1k:.4f}* | External API |",
         "",
-        "> **Assumptions (verify / update after final GPU run):**",
+        "> **Assumptions:**",
         f"> - T4-equivalent cloud spot/on-demand rate assumed at **${t4_hourly_usd:.2f}/hr** (sequential batch=1 rollout latency; continuous batching lowers unit cost further).",
-        f"> - **Placeholder API comparison:** GPT-4o-mini list price assumed at **${gpt4o_mini_input_per_1m_usd:.2f}/1M input tokens** and **${gpt4o_mini_output_per_1m_usd:.2f}/1M output tokens** with ~{assumed_prompt_tokens_per_task} multi-turn prompt tokens and {tuned_out_toks:.1f} completion tokens per task — *update list prices and token counts to match current provider billing*.",
     ]
     return "\n".join(lines)
 
@@ -130,14 +129,14 @@ def build_comparison_markdown(
     n_tuned = tuned_metrics.get("n_evaluated", "?")
 
     lines = [
-        "# LedgerCall Evaluation Comparison: Base vs GRPO-Tuned",
+        "# LedgerCall Evaluation Comparison: Base vs SFT-Tuned",
         "",
         f"- **Base run (`{base_metrics.get('tag', 'base')}`)**: `n={n_base}`, model `{base_metrics.get('model_info', {}).get('base_model', 'CohereLabs/tiny-aya-global')}`",
         f"- **Tuned run (`{tuned_metrics.get('tag', 'tuned')}`)**: `n={n_tuned}`, adapter `{tuned_metrics.get('model_info', {}).get('adapter', 'out/grpo')}`",
         "",
         "## Before / After Metrics",
         "",
-        "| Metric | Direction | Base | GRPO-Tuned | Delta (Tuned - Base) |",
+        "| Metric | Direction | Base | SFT-Tuned | Delta (Tuned - Base) |",
         "| :--- | :---: | ---: | ---: | ---: |",
     ]
 
