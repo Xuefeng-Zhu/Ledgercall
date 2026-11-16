@@ -175,15 +175,19 @@ def train(args: argparse.Namespace) -> dict[str, Any]:
     for epoch in range(math.ceil(args.epochs)):
         rng.shuffle(order)
         for i in order:
-            if step >= total_steps:
+            if step >= total_steps or (time.time() - t0) > args.max_minutes * 60:
                 break
             ex = examples[i]
             ids = ex["prompt_ids"] + ex["completion_ids"]
-            labels = [-100] * len(ex["prompt_ids"]) + ex["completion_ids"]
             input_ids = torch.tensor([ids], device=device)
-            lab = torch.tensor([labels], device=device)
+            comp = torch.tensor(ex["completion_ids"], device=device)
+            # Only materialise logits for the completion span: Tiny Aya's 262k vocab
+            # makes full-sequence logits the dominant memory cost on a 16 GB T4.
             with torch.autocast("cuda", dtype=torch.float16, enabled=torch.cuda.is_available()):
-                loss = model(input_ids=input_ids, labels=lab).loss / args.grad_accum
+                logits = model(input_ids=input_ids, logits_to_keep=len(ex["completion_ids"]) + 1).logits
+            logits = logits[0, :-1].float()
+            loss = torch.nn.functional.cross_entropy(logits, comp) / args.grad_accum
+            del logits
             scaler.scale(loss).backward()
             losses.append(loss.item() * args.grad_accum)
             micro += 1
@@ -218,6 +222,7 @@ def main(argv: list[str] | None = None):
     ap.add_argument("--grad_accum", type=int, default=8)
     ap.add_argument("--lr", type=float, default=2e-4)
     ap.add_argument("--lora_r", type=int, default=16)
+    ap.add_argument("--max_minutes", type=float, default=60.0)
     ap.add_argument("--capture_only", action="store_true")
     return train(ap.parse_args(argv))
 
